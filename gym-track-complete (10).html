@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kishtwar Fitness Club — Membership Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1B1C1F;
+    --bg-texture: #1F2023;
+    --surface: #232427;
+    --surface-2: #2B2C30;
+    --border: #35363B;
+    --text: #F2F0EA;
+    --muted: #8E9096;
+    --lime: #3D9BFF;
+    --amber: #FF6B00;
+    --coral: #FF1A1A;
+    --lime-dim: rgba(61,155,255,0.12);
+    --amber-dim: rgba(255,107,0,0.12);
+    --coral-dim: rgba(255,26,26,0.12);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh;}
+  body{
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:32px 24px 80px;}
+
+  /* Auth Screen */
+  .auth-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .auth-box{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:32px;
+    width:100%; max-width:380px;
+  }
+  .auth-box h1{font-family:'Anton',sans-serif; font-weight:400; font-size:26px; margin-bottom:4px;}
+  .auth-box .sub{color:var(--muted); font-size:13px; margin-bottom:24px;}
+  .auth-error{
+    background:var(--coral-dim); color:var(--coral); font-size:13px; padding:10px 12px; border-radius:8px;
+    margin-bottom:14px; display:none; word-break:break-word;
+  }
+  .auth-toggle{text-align:center; margin-top:16px; font-size:13px; color:var(--muted);}
+  .auth-toggle a{color:var(--lime); cursor:pointer; font-weight:600; text-decoration:none;}
+
+  #appWrap{display:none;}
+
+  /* Header */
+  header{display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; gap:16px; flex-wrap:wrap; position: relative;}
+  .brand{display:flex; align-items:center; gap:14px;}
+  .brand-mark{
+    width:44px; height:44px; border-radius:8px; background:linear-gradient(145deg, var(--surface-2), var(--surface));
+    border:1px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .brand-mark svg{width:24px; height:24px;}
+  .brand h1{font-family:'Anton',sans-serif; font-weight:400; font-size:28px; letter-spacing:0.5px; line-height:1;}
+  .brand p{color:var(--muted); font-size:13px; margin-top:4px;}
+  .btn{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:14px; padding:12px 20px; border-radius:8px;
+    border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .12s ease, filter .12s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--lime); color:#FFFFFF;}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:var(--surface); color:var(--text); border:1px solid var(--border);}
+  .btn-ghost:hover{background:var(--surface-2);}
+  .btn-sm{padding:8px 14px; font-size:13px; border-radius:6px;}
+
+  /* Stats */
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px;}
+  .stat-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px;
+    position:relative; overflow:hidden; cursor:pointer; transition:border-color .15s ease;
+  }
+  .stat-card::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px;}
+  .stat-card.active-c::before{background:var(--lime);}
+  .stat-card.soon-c::before{background:var(--amber);}
+  .stat-card.expired-c::before{background:var(--coral);}
+  .stat-card.selected{border-color:var(--muted);}
+  .stat-label{font-size:12px; text-transform:uppercase; letter-spacing:1.2px; color:var(--muted); font-weight:600; margin-bottom:10px;}
+  .stat-num{font-family:'Anton',sans-serif; font-size:44px; line-height:1;}
+  .active-c .stat-num{color:var(--lime);}
+  .soon-c .stat-num{color:var(--amber);}
+  .expired-c .stat-num{color:var(--coral);}
+
+  /* Controls */
+  .controls{display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:center;}
+  .search-box{
+    flex:1; min-width:220px; background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:10px 14px; display:flex; align-items:center; gap:10px;
+  }
+  .search-box input{background:transparent; border:none; outline:none; color:var(--text); font-size:14px; width:100%; font-family:'Inter',sans-serif;}
+  .search-box svg{width:16px; height:16px; color:var(--muted); flex-shrink:0;}
+  .tabs{display:flex; gap:6px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px;}
+  .tab{padding:8px 14px; border-radius:6px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; white-space:nowrap;}
+  .tab.active{background:var(--surface-2); color:var(--text);}
+
+  /* Member list */
+  .member-grid{display:flex; flex-direction:column; gap:10px;}
+  .member-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px;
+    display:flex; align-items:center; gap:18px; position:relative;
+  }
+  .status-bar{position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:12px 0 0 12px;}
+  .status-bar.active{background:var(--lime);}
+  .status-bar.soon{background:var(--amber);}
+  .status-bar.expired{background:var(--coral);}
+
+  .gauge{flex-shrink:0; width:58px; height:58px; position:relative;}
+  .gauge svg{transform:rotate(-90deg);}
+  .gauge-track{fill:none; stroke:var(--border); stroke-width:5;}
+  .gauge-fill{fill:none; stroke-width:5; stroke-linecap:round; transition:stroke-dashoffset .3s ease;}
+  .gauge-fill.active{stroke:var(--lime);}
+  .gauge-fill.soon{stroke:var(--amber);}
+  .gauge-fill.expired{stroke:var(--coral);}
+  .gauge-text{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;}
+  .gauge-text.active{color:var(--lime);}
+  .gauge-text.soon{color:var(--amber);}
+  .gauge-text.expired{color:var(--coral);}
+
+  .member-info{flex:1; min-width:0;}
+  .member-name{font-size:16px; font-weight:700; margin-bottom:4px;}
+  .member-meta{display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); font-family:'JetBrains Mono',monospace;}
+  .member-meta span{display:flex; align-items:center; gap:5px;}
+
+  .status-pill{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; padding:5px 10px; border-radius:20px; flex-shrink:0;
+  }
+  .status-pill.active{background:var(--lime-dim); color:var(--lime);}
+  .status-pill.soon{background:var(--amber-dim); color:var(--amber);}
+  .status-pill.expired{background:var(--coral-dim); color:var(--coral);}
+
+  .member-actions{display:flex; gap:6px; flex-shrink:0;}
+  .icon-btn{
+    width:34px; height:34px; border-radius:7px; border:1px solid var(--border); background:var(--surface-2);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); transition:color .12s, border-color .12s;
+  }
+  .icon-btn:hover{color:var(--text); border-color:var(--muted);}
+  .icon-btn svg{width:16px; height:16px;}
+
+  .empty-state{text-align:center; padding:60px 20px; color:var(--muted);}
+  .empty-state h3{font-family:'Anton',sans-serif; font-size:22px; color:var(--text); margin-bottom:8px; font-weight:400;}
+
+  /* Modal */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(10,10,10,0.6); backdrop-filter:blur(3px);
+    align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px; width:100%; max-width:440px;
+    max-height:90vh; overflow-y:auto;
+  }
+  .modal h2{font-family:'Anton',sans-serif; font-size:22px; font-weight:400; margin-bottom:20px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.6px; color:var(--muted); margin-bottom:7px;}
+  .field input, .field select{
+    width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:11px 13px;
+    color:var(--text); font-size:14px; font-family:'Inter',sans-serif; outline:none;
+  }
+  .field input:focus, .field select:focus{border-color:var(--lime);}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .modal-actions{display:flex; gap:10px; margin-top:22px;}
+  .modal-actions .btn{flex:1; justify-content:center;}
+
+  .header-controls{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .user-label{font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace;}
+
+  footer{margin-top:36px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;}
+  .footer-note{color:var(--muted); font-size:12px; font-family:'JetBrains Mono',monospace;}
+
+  @media (max-width:640px){
+    .stats{grid-template-columns:1fr;}
+    .member-card{flex-wrap:wrap;}
+    .member-actions{margin-left:auto;}
+    .field-row{grid-template-columns:1fr;}
+    .header-controls{justify-content:center;}
+  }
+
+  /* Theme Toggle */
+  .theme-toggle {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    transition: all 0.3s ease;
+  }
+  .theme-toggle:hover {
+    background: var(--surface-2);
+    border-color: var(--lime);
+  }
+  .theme-toggle svg {
+    width: 20px;
+    height: 20px;
+    transition: opacity 0.3s ease;
+  }
+  .theme-toggle .sun-icon {
+    position: absolute;
+    opacity: 1;
+  }
+  .theme-toggle .moon-icon {
+    position: absolute;
+    opacity: 0;
+  }
+  
+  /* Light mode */
+  html.light-mode {
+    --bg: #F5F4F1;
+    --bg-texture: #EBE9E4;
+    --surface: #FFFFFF;
+    --surface-2: #F0EEEB;
+    --border: #D9D6D0;
+    --text: #2B2926;
+    --muted: #7A7570;
+    --lime-dim: rgba(61,155,255,0.12);
+    --amber-dim: rgba(255,107,0,0.12);
+    --coral-dim: rgba(255,26,26,0.12);
+  }
+  
+  html.light-mode .theme-toggle .sun-icon {
+    opacity: 0;
+  }
+  html.light-mode .theme-toggle .moon-icon {
+    opacity: 1;
+  }
+  
+  html.light-mode .member-card {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  
+  html.light-mode input, html.light-mode textarea {
+    background: #FFFFFF;
+    border-color: #D9D6D0;
+    color: #2B2926;
+  }
+  
+  html.light-mode input::placeholder, html.light-mode textarea::placeholder {
+    color: #A39F98;
+  }
+
+  /* Payment Method Indicator */
+  .payment-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  
+  .payment-indicator.online {
+    background-color: #00D926;
+  }
+  
+  .payment-indicator.offline {
+    background-color: #FFFFFF;
+    border: 1px solid #666;
+  }
+  
+  html.light-mode .payment-indicator.offline {
+    background-color: #000000;
+    border: none;
+  }
+  
+  .payment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.85em;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(0, 217, 38, 0.1);
+  }
+  
+  .payment-badge.offline {
+    background: rgba(100, 100, 100, 0.1);
+  }
+
+  /* Payment Sections */
+  .payment-sections {
+    margin-top: 40px;
+  }
+  
+  .payment-section-container {
+    margin-bottom: 40px;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  
+  .payment-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border);
+  }
+  
+  .payment-section-header h3 {
+    margin: 0;
+    font-size: 1.2em;
+    color: var(--text);
+  }
+  
+  .payment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  
+  .payment-grid .member-card {
+    margin-bottom: 0;
+  }
+  
+  /* Print Styles */
+  @media print {
+    body * {
+      display: none !important;
+    }
+    
+    .payment-print-section {
+      display: block !important;
+    }
+    
+    .payment-print-section * {
+      display: block !important;
+    }
+    
+    .member-card {
+      page-break-inside: avoid;
+      border: 1px solid #000;
+      margin-bottom: 20px;
+      padding: 15px;
+    }
+    
+    .payment-print-section h2,
+    .payment-print-section h3 {
+      display: block !important;
+      color: #000;
+      page-break-after: avoid;
+    }
+    
+    .member-actions {
+      display: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Auth Screen -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-box">
+    <h1 id="authTitle">Log in</h1>
+        <button id="themeToggle" class="theme-toggle" title="Toggle dark/light mode" onclick="window.toggleTheme()">
+          <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+    <p class="sub">Kishtwar Fitness Club — membership tracker</p>
+    <div class="auth-error" id="authError"></div>
+    <form id="authForm">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="authEmail" required placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="authPassword" required placeholder="••••••••" minlength="6">
+      </div>
+      <button type="submit" class="btn btn-primary" id="authSubmit" style="width:100%; justify-content:center;">Log in</button>
+    </form>
+    <div class="auth-toggle">
+      <span id="authToggleText">Don't have an account?</span> <a id="authToggleLink">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="wrap" id="appWrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3D9BFF" stroke-width="2" stroke-linecap="round"><path d="M6 7v10M18 7v10M2 10v4M22 10v4M6 12h12"/></svg>
+      </div>
+      <div>
+        <h1>GYM TRACK</h1>
+        <p>Membership &amp; fee tracker &mdash; built by Team Ruhaan</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <span class="user-label" id="userEmailLabel"></span>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">Log out</button>
+      <button class="btn btn-ghost" id="exportBtn">Export backup</button>
+      <button class="btn btn-primary" id="addBtn">+ Add member</button>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat-card active-c" data-filter="active">
+      <div class="stat-label">Active</div>
+      <div class="stat-num" id="countActive">0</div>
+    </div>
+    <div class="stat-card soon-c" data-filter="soon">
+      <div class="stat-label">Expiring soon</div>
+      <div class="stat-num" id="countSoon">0</div>
+    </div>
+    <div class="stat-card expired-c" data-filter="expired">
+      <div class="stat-label">Expired</div>
+      <div class="stat-num" id="countExpired">0</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Search by name or phone…">
+    </div>
+    <button class="btn btn-ghost" id="printBtn" style="display:none;" onclick="window.printMembers()">🖨️ Print</button>
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-filter="all">All</div>
+      <div class="tab" data-filter="active">Active</div>
+      <div class="tab" data-filter="soon">Expiring soon</div>
+      <div class="tab" data-filter="expired">Expired</div>
+      <div class="tab" data-filter="online">Online Payments</div>
+      <div class="tab" data-filter="offline">Offline Payments</div>
+    </div>
+  </div>
+
+  <div class="member-grid" id="memberGrid"></div>
+
+  
+  
+  <footer>
+    <div class="footer-note" id="totalCount">0 members tracked</div>
+    <div class="footer-note">Data synced to your account across all devices.</div>
+  </footer>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Add member</h2>
+    <form id="memberForm">
+      <div class="field">
+        <label>Full name</label>
+        <input type="text" id="fName" required placeholder="e.g. Rohit Sharma">
+      </div>
+      <div class="field">
+        <label>Phone number</label>
+        <input type="tel" id="fPhone" required placeholder="e.g. 9876543210">
+      </div>
+      <div class="field">
+        <label>Payment Method</label>
+        <select id="fPayment" required>
+          <option value="online">Online Payment</option>
+          <option value="offline">Offline Payment</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Join date</label>
+          <input type="date" id="fJoin" required>
+        </div>
+        <div class="field">
+          <label>Duration (months)</label>
+          <input type="number" id="fDuration" min="1" step="1" value="1" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Fee amount paid</label>
+        <input type="number" id="fFee" min="0" step="1" placeholder="e.g. 1500">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save member</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc, setDoc, enableIndexedDbPersistence
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ============================================================================
+  // PASTE YOUR OWN FIREBASE CONFIG HERE
+  // Get this from: Firebase Console > Project Settings > General > Your apps > Web app config
+  // ============================================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyDHHA5_yRI0vl-b8GNJGY96kOl7nxlG_x8",
+    authDomain: "gym-track-2026.firebaseapp.com",
+    projectId: "gym-track-2026",
+    storageBucket: "gym-track-2026.firebasestorage.app",
+    messagingSenderId: "489165112117",
+    appId: "1:489165112117:web:bac8ddd1063228f1df027c",
+    measurementId: "G-MJLHH2L4RM"
+  };
+  // ============================================================================
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Enable offline persistence
+  enableIndexedDbPersistence(db).catch(err => {
+    if(err.code === 'failed-precondition') console.log('Multiple tabs open');
+    if(err.code === 'unimplemented') console.log('Browser not supported');
+  });
+
+  let members = [];
+  let editingId = null;
+  let activeFilter = 'all';
+  let searchTerm = '';
+  let currentUser = null;
+  let authMode = 'login';
+
+  const SOON_WINDOW_DAYS = 7;
+  const REMINDER_DAYS_BEFORE = 3; // Send reminder 3 days before expiry
+
+  async function save(){
+    if(!currentUser) return;
+    try{
+      await setDoc(doc(db, 'gyms', currentUser.uid), { 
+        members,
+        lastUpdated: new Date().toISOString()
+      });
+    } catch(err){
+      console.error('Save error:', err);
+    }
+  }
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // Auth UI
+  const authScreen = document.getElementById('authScreen');
+  const appWrap = document.getElementById('appWrap');
+  const authForm = document.getElementById('authForm');
+  const authError = document.getElementById('authError');
+  const authTitle = document.getElementById('authTitle');
+  const authSubmit = document.getElementById('authSubmit');
+  const authToggleText = document.getElementById('authToggleText');
+  const authToggleLink = document.getElementById('authToggleLink');
+
+  function showAuthError(msg){
+    authError.textContent = msg;
+    authError.style.display = 'block';
+  }
+
+  authToggleLink.addEventListener('click', () => {
+    authMode = authMode === 'login' ? 'signup' : 'login';
+    authTitle.textContent = authMode === 'login' ? 'Log in' : 'Create account';
+    authSubmit.textContent = authMode === 'login' ? 'Log in' : 'Sign up';
+    authToggleText.textContent = authMode === 'login' ? "Don't have an account?" : 'Already have an account?';
+    authToggleLink.textContent = authMode === 'login' ? 'Sign up' : 'Log in';
+    authError.style.display = 'none';
+  });
+
+  authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.style.display = 'none';
+    authSubmit.disabled = true;
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    try{
+      if(authMode === 'login'){
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+      }
+    } catch(err){
+      showAuthError(err.message.replace('Firebase: ', '').split(' (')[0]);
+      authSubmit.disabled = false;
+    }
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+
+  onAuthStateChanged(auth, async (user) => {
+    authSubmit.disabled = false;
+    currentUser = user;
+    if(user){
+      authScreen.style.display = 'none';
+      appWrap.style.display = 'block';
+      document.getElementById('userEmailLabel').textContent = user.email;
+      
+      const snap = await getDoc(doc(db, 'gyms', user.uid));
+      members = snap.exists() && snap.data().members ? snap.data().members : [];
+      render();
+    } else {
+      authScreen.style.display = 'flex';
+      appWrap.style.display = 'none';
+      document.getElementById('authEmail').value = '';
+      document.getElementById('authPassword').value = '';
+    }
+  });
+
+  // App logic
+  function addMonths(dateStr, months){
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setMonth(d.getMonth() + Number(months));
+    return d;
+  }
+
+  function daysBetween(a, b){
+    const ms = new Date(b.getFullYear(), b.getMonth(), b.getDate()) - new Date(a.getFullYear(), a.getMonth(), a.getDate());
+    return Math.round(ms / 86400000);
+  }
+
+  function getStatus(member){
+    const today = new Date();
+    const expiry = addMonths(member.joinDate, member.duration);
+    const daysLeft = daysBetween(today, expiry);
+    if(daysLeft < 0) return {status:'expired', daysLeft, expiry};
+    if(daysLeft <= SOON_WINDOW_DAYS) return {status:'soon', daysLeft, expiry};
+    return {status:'active', daysLeft, expiry};
+  }
+
+  function fmtDate(d){
+    return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+  }
+
+  function gaugeCircle(pct){
+    const r = 24, c = 2*Math.PI*r;
+    const offset = c - (Math.max(0, Math.min(1,pct)) * c);
+    return {c, offset};
+  }
+
+  function render(){
+    const today = new Date();
+    let active=0, soon=0, expired=0;
+    const enriched = members.map(m => ({...m, ...getStatus(m)}));
+    enriched.forEach(m => { 
+      if(m.status==='active') active++; 
+      else if(m.status==='soon') soon++; 
+      else expired++; 
+    });
+
+    document.getElementById('countActive').textContent = active;
+    document.getElementById('countSoon').textContent = soon;
+    document.getElementById('countExpired').textContent = expired;
+    document.getElementById('totalCount').textContent = members.length + (members.length===1 ? ' member tracked' : ' members tracked');
+
+    let list = enriched;
+    if(activeFilter !== 'all'){
+      if(activeFilter === 'online'){
+        list = list.filter(m => m.paymentMethod === 'online');
+      } else if(activeFilter === 'offline'){
+        list = list.filter(m => m.paymentMethod !== 'online');
+      } else {
+        list = list.filter(m => m.status === activeFilter);
+      }
+    }
+    if(searchTerm.trim()){
+      const q = searchTerm.trim().toLowerCase();
+      list = list.filter(m => m.name.toLowerCase().includes(q) || m.phone.includes(q));
+    }
+    list.sort((a,b) => a.daysLeft - b.daysLeft);
+
+    const grid = document.getElementById('memberGrid');
+    if(list.length === 0){
+      grid.innerHTML = `<div class="empty-state">
+        <h3>No members here</h3>
+        <p>${members.length === 0 ? 'Add your first member to get started.' : 'Nothing matches this filter or search.'}</p>
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = list.map(m => {
+      const totalSpan = 30 * m.duration;
+      const pct = Math.max(0, Math.min(1, m.daysLeft / totalSpan));
+      const {c, offset} = gaugeCircle(m.status === 'expired' ? 0 : pct);
+      const gaugeLabel = m.status === 'expired' ? `${Math.abs(m.daysLeft)}d` : `${m.daysLeft}d`;
+      const pillLabel = m.status === 'expired' ? `Overdue ${Math.abs(m.daysLeft)}d` : m.status === 'soon' ? `${m.daysLeft}d left` : `${m.daysLeft}d left`;
+      const waPhone = m.phone.replace(/[^0-9]/g, '');
+
+      return `
+      <div class="member-card">
+        <div class="status-bar ${m.status}"></div>
+        <div class="gauge">
+          <svg width="58" height="58" viewBox="0 0 58 58">
+            <circle class="gauge-track" cx="29" cy="29" r="24"></circle>
+            <circle class="gauge-fill ${m.status}" cx="29" cy="29" r="24"
+              stroke-dasharray="${c}" stroke-dashoffset="${offset}"></circle>
+          </svg>
+          <div class="gauge-text ${m.status}">${gaugeLabel}</div>
+        </div>
+        <div class="member-info">
+          <div class="member-name">${escapeHtml(m.name)}</div>
+          <div class="member-meta">
+            <span>📞 ${escapeHtml(m.phone)}</span>
+            <span class="payment-badge ${m.paymentMethod || 'offline'}">
+              <span class="payment-indicator ${m.paymentMethod || 'offline'}"></span>
+              ${m.paymentMethod === 'online' ? 'Online' : 'Offline'}
+            </span>
+            <span>Joined ${fmtDate(new Date(m.joinDate + 'T00:00:00'))}</span>
+            <span>Expires ${fmtDate(m.expiry)}</span>
+            <span>${m.duration}mo · ₹${m.fee || 0}</span>
+          </div>
+        </div>
+        <div class="status-pill ${m.status}">${pillLabel}</div>
+        <div class="member-actions">
+          <a class="icon-btn" title="WhatsApp Message" href="https://wa.me/${waPhone}?text=${encodeURIComponent(m.status === 'soon' ? 'Hey. Your membership at Kishtwar Fitness Club is going to expire in ' + (m.daysLeft === 1 ? '1 day' : (m.daysLeft === 1 ? '1 day' : m.daysLeft + ' days')) : m.status === 'expired' ? 'Hey. Your membership at Kishtwar Fitness Club has expired. Ready to renew?' : 'Hey. Your membership at Kishtwar Fitness Club is active!')}" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Zm0 2a8 8 0 0 1 6.9 12l.6 2.3-2.3-.6A8 8 0 1 1 12 4Zm-3.4 4.2c-.2 0-.5 0-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.2 5 4.3 2.4 1 2.9.8 3.4.7.6-.1 1.7-.7 2-1.3.2-.6.2-1.2.2-1.3-.1-.1-.3-.2-.6-.4l-2.3-1.1c-.3-.1-.5-.2-.7.2l-.6 1c-.1.2-.3.2-.5.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.5-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-1-2.4c-.2-.5-.4-.5-.6-.5Z"/></svg>
+          </a>
+          <button class="icon-btn" title="Edit" onclick="window.openEdit('${m.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          <button class="icon-btn" title="Renew" onclick="window.renewMember('${m.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 22v-6h6M3.5 9a9 9 0 0 1 14.8-3.4L21 8M20.5 15a9 9 0 0 1-14.8 3.4L3 16"/></svg>
+          </button>
+          <button class="icon-btn" title="Delete" onclick="window.deleteMember('${m.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+
+  }
+
+  function escapeHtml(s){
+    return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Modal
+  const overlay = document.getElementById('modalOverlay');
+  const form = document.getElementById('memberForm');
+
+  function openAdd(){
+    editingId = null;
+    document.getElementById('modalTitle').textContent = 'Add member';
+    document.getElementById('saveBtn').textContent = 'Save member';
+    form.reset();
+    document.getElementById('fJoin').value = new Date().toISOString().slice(0,10);
+    document.getElementById('fDuration').value = 1;
+    document.getElementById('fPayment').value = 'offline';
+    overlay.classList.add('open');
+    document.getElementById('fName').focus();
+  }
+
+  window.openEdit = function(id){
+    const m = members.find(x => x.id === id);
+    if(!m) return;
+    editingId = id;
+    document.getElementById('modalTitle').textContent = 'Edit member';
+    document.getElementById('saveBtn').textContent = 'Update member';
+    document.getElementById('fName').value = m.name;
+    document.getElementById('fPhone').value = m.phone;
+    document.getElementById('fPayment').value = m.paymentMethod || 'offline';
+    document.getElementById('fJoin').value = m.joinDate;
+    document.getElementById('fDuration').value = m.duration;
+    document.getElementById('fFee').value = m.fee || '';
+    overlay.classList.add('open');
+  };
+
+  window.deleteMember = function(id){
+    const m = members.find(x => x.id === id);
+    if(!m) return;
+    if(confirm(`Remove ${m.name} from the tracker?`)){
+      members = members.filter(x => x.id !== id);
+      save(); render();
+    }
+  };
+
+  window.renewMember = function(id){
+    const m = members.find(x => x.id === id);
+    if(!m) return;
+    if(confirm(`Renew ${m.name}'s membership starting today for ${m.duration} month(s)?`)){
+      m.joinDate = new Date().toISOString().slice(0,10);
+      save(); render();
+    }
+  };
+
+  window.printMembers = function(){
+    const printWindow = window.open('', '', 'height=600,width=900');
+    const title = activeFilter === 'online' ? 'Online Payments' : activeFilter === 'offline' ? 'Offline Payments' : 'Members List';
+    const grid = document.getElementById('memberGrid');
+    const members = Array.from(grid.querySelectorAll('.member-card'));
+    
+    if(members.length === 0){
+      alert('No members to print');
+      return;
+    }
+    
+    const membersData = members.map(card => {
+      const name = card.querySelector('.member-name').textContent;
+      const metas = card.querySelectorAll('.member-meta span');
+      const phone = metas[0]?.textContent || '';
+      const paymentSpan = Array.from(metas).find(m => m.textContent.includes('Online') || m.textContent.includes('Offline'));
+      const payment = paymentSpan?.textContent.trim() || '';
+      const status = card.querySelector('.status-pill').textContent;
+      const expires = Array.from(metas).find(m => m.textContent.includes('Expires'))?.textContent || '';
+      const fee = Array.from(metas).find(m => m.textContent.includes('mo'))?.textContent || '';
+      
+      return {name, phone, payment, status, expires, fee};
+    });
+    
+    const printHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${title} - Kishtwar Fitness Club</title>
+        <style>
+          * { margin: 0; padding: 0; }
+          body { font-family: Arial, sans-serif; color: #333; line-height: 1.4; }
+          .header { text-align: center; margin-bottom: 30px; }
+          h1 { font-size: 24px; margin-bottom: 5px; }
+          .timestamp { color: #666; font-size: 12px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background-color: #f0f0f0; padding: 10px; text-align: left; border-bottom: 2px solid #333; font-weight: bold; }
+          td { padding: 10px; border-bottom: 1px solid #ddd; }
+          tr:last-child td { border-bottom: 2px solid #333; }
+          .total { margin-top: 20px; text-align: right; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${title} - Kishtwar Fitness Club</h1>
+          <div class="timestamp">Printed on: ${new Date().toLocaleString()}</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th>Expires</th>
+              <th>Fee</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${membersData.map(m => `
+              <tr>
+                <td>${m.name}</td>
+                <td>${m.phone}</td>
+                <td>${m.payment}</td>
+                <td>${m.status}</td>
+                <td>${m.expires}</td>
+                <td>${m.fee}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="total">Total Members: ${membersData.length}</div>
+      </body>
+      </html>
+    `;
+    
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 250);
+  };
+
+  
+  
+  window.printSection = function(type){
+    const printWindow = window.open('', '', 'height=600,width=800');
+    const section = document.getElementById(type === 'online' ? 'onlineGrid' : 'offlineGrid');
+    const title = type === 'online' ? 'Online Payments' : 'Offline Payments';
+    const indicator = type === 'online' ? '<span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #00D926; margin-right: 8px;"></span>' : '<span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #000; margin-right: 8px;"></span>';
+    
+    const printHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${title} - Kishtwar Fitness Club</title>
+        <style>
+          * { margin: 0; padding: 0; }
+          body { font-family: Arial, sans-serif; color: #333; }
+          h1 { text-align: center; margin: 20px 0; font-size: 24px; }
+          .indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+          .member { 
+            page-break-inside: avoid;
+            border: 1px solid #ddd;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+          }
+          .member-name { font-weight: bold; font-size: 16px; margin-bottom: 8px; }
+          .member-info { font-size: 13px; color: #666; }
+          .info-line { margin: 4px 0; }
+        </style>
+      </head>
+      <body>
+        <h1>${indicator}${title} - Kishtwar Fitness Club</h1>
+        <div style="margin: 20px;">
+          ${Array.from(section.querySelectorAll('.member-card')).map(card => {
+            const name = card.querySelector('.member-name').textContent;
+            const metas = card.querySelectorAll('.member-meta span');
+            const phone = metas[0]?.textContent || '';
+            const status = card.querySelector('.status-pill').textContent;
+            const expires = Array.from(metas).find(m => m.textContent.includes('Expires'))?.textContent || '';
+            const fee = Array.from(metas).find(m => m.textContent.includes('mo'))?.textContent || '';
+            
+            return `
+              <div class="member">
+                <div class="member-name">${name}</div>
+                <div class="member-info">
+                  <div class="info-line">${phone}</div>
+                  <div class="info-line">Status: ${status}</div>
+                  <div class="info-line">${expires}</div>
+                  <div class="info-line">${fee}</div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </body>
+      </html>
+    `;
+    
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 250);
+  };
+
+
+  document.getElementById('addBtn').addEventListener('click', openAdd);
+  document.getElementById('cancelBtn').addEventListener('click', () => overlay.classList.remove('open'));
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('open'); });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+      name: document.getElementById('fName').value.trim(),
+      phone: document.getElementById('fPhone').value.trim(),
+      paymentMethod: document.getElementById('fPayment').value,
+      joinDate: document.getElementById('fJoin').value,
+      duration: Number(document.getElementById('fDuration').value),
+      fee: Number(document.getElementById('fFee').value) || 0
+    };
+    if(editingId){
+      const idx = members.findIndex(x => x.id === editingId);
+      members[idx] = {...members[idx], ...data};
+    } else {
+      members.push({id: uid(), ...data});
+    }
+    await save();
+    overlay.classList.remove('open');
+    render();
+  });
+
+  // Filters
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeFilter = tab.dataset.filter;
+      document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('selected'));
+      // Show print button for online/offline filters
+      document.getElementById('printBtn').style.display = (activeFilter === 'online' || activeFilter === 'offline') ? 'block' : 'none';
+      render();
+    });
+  });
+
+  document.querySelectorAll('.stat-card').forEach(card => {
+    card.addEventListener('click', () => {
+      activeFilter = card.dataset.filter;
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.filter === activeFilter));
+      document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      render();
+    });
+  });
+
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchTerm = e.target.value;
+    render();
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(members, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gym-track-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+
+  window.toggleTheme = () => {
+    const html = document.documentElement;
+    if (html.classList.contains('light-mode')) {
+      html.classList.remove('light-mode');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      html.classList.add('light-mode');
+      localStorage.setItem('theme', 'light');
+    }
+  };
+  
+  // Load theme on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+      document.documentElement.classList.add('light-mode');
+    }
+  });
+</script>
+</body>
+</html>
